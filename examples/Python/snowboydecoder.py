@@ -94,7 +94,8 @@ class HotwordDetector(object):
                  resource=RESOURCE_FILE,
                  sensitivity=[],
                  audio_gain=1,
-                 apply_frontend=False):
+                 apply_frontend=False,
+                 input_device_index=None):
 
         def audio_callback(in_data, frame_count, time_info, status):
             self.ring_buffer.extend(in_data)
@@ -136,7 +137,8 @@ class HotwordDetector(object):
             channels=self.detector.NumChannels(),
             rate=self.detector.SampleRate(),
             frames_per_buffer=2048,
-            stream_callback=audio_callback)
+            stream_callback=audio_callback,
+            input_device_index=input_device_index)
 
 
     def start(self, detected_callback=play_audio_file,
