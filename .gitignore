@@ -52,3 +52,6 @@ Snowboy.pm
 /dist
 **/snowboy.egg-info
 /.idea
+
+**/records
+*.pmdl

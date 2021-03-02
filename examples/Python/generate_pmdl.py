@@ -1,5 +1,6 @@
 
 import argparse
+import glob
 import tempfile
 import uuid
 from scipy.io import wavfile
@@ -17,9 +18,7 @@ def check_enroll_output(enroll_ans):
 
 def main():
     parser = argparse.ArgumentParser(description='Command line client for generating snowboy personal model')
-    parser.add_argument('-r1', '--record1', dest="record1", required=True, help="Record voice 1")
-    parser.add_argument('-r2', '--record2', dest="record2", required=True, help="Record voice 2")
-    parser.add_argument('-r3', '--record3', dest="record3", required=True, help="Record voice 3")
+    parser.add_argument('-d', '-dir', dest='record_path', required=True, help='Record voice path')
     parser.add_argument('-n', '--name', dest="model_name", required=True, help="Personal model name")
     parser.add_argument('-lang', '--language', default="en", dest="language", help="Language")
     args = parser.parse_args()
@@ -41,7 +40,8 @@ def main():
     assert cut.BitsPerSample() == enroll.BitsPerSample()
     print("channels: %d, sample rate: %d, bits: %d" % (cut.NumChannels(), cut.SampleRate(), cut.BitsPerSample()))
 
-    recording_set = [args.record1, args.record2, args.record3]
+    recording_set = glob.glob(args.record_path+'/*.wav')
+    print(recording_set)
     for rec in recording_set:
         print("processing %s" % rec)
         _, data = wavfile.read(rec)
