@@ -10,6 +10,9 @@ import logging
 from ctypes import *
 from contextlib import contextmanager
 
+import numpy as np
+from scipy import signal
+
 logging.basicConfig()
 logger = logging.getLogger("snowboy")
 logger.setLevel(logging.INFO)
@@ -95,12 +98,14 @@ class HotwordDetector(object):
                  sensitivity=[],
                  audio_gain=1,
                  apply_frontend=False,
-                 input_device_index=None):
+                 input_device=None):
 
         def audio_callback(in_data, frame_count, time_info, status):
             self.ring_buffer.extend(in_data)
             play_data = chr(0) * len(in_data)
             return play_data, pyaudio.paContinue
+
+        self.input_device = input_device
 
         tm = type(decoder_model)
         ts = type(sensitivity)
@@ -132,13 +137,12 @@ class HotwordDetector(object):
             self.audio = pyaudio.PyAudio()
         self.stream_in = self.audio.open(
             input=True, output=False,
-            format=self.audio.get_format_from_width(
-                self.detector.BitsPerSample() / 8),
+            format=pyaudio.paInt16,
             channels=self.detector.NumChannels(),
-            rate=self.detector.SampleRate(),
-            frames_per_buffer=2048,
+            rate=self.detector.SampleRate() if input_device is None else int(input_device.get('defaultSampleRate')),
+            frames_per_buffer=4096,
             stream_callback=audio_callback,
-            input_device_index=input_device_index)
+            input_device_index=None if input_device is None else input_device.get('index'))
 
 
     def start(self, detected_callback=play_audio_file,
@@ -198,6 +202,11 @@ class HotwordDetector(object):
             if len(data) == 0:
                 time.sleep(sleep_time)
                 continue
+
+            if self.input_device is not None:
+                result = np.fromstring(data, dtype=np.int16)
+                resample_ratio = 16000 / self.input_device.get('defaultSampleRate')
+                data = signal.resample(result, int(len(result) * resample_ratio)).astype(np.int16).tostring()
 
             status = self.detector.RunDetection(data)
             if status == -1:
